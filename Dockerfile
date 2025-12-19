@@ -5,8 +5,10 @@ WORKDIR /app
 # Install uv for package management
 RUN pip install --no-cache-dir uv
 
-# Install the mcp-server-qdrant package
-RUN uv pip install --system --no-cache-dir mcp-server-qdrant
+# Install this repository (so deployments use the patched code)
+COPY pyproject.toml README.md uv.lock /app/
+COPY src /app/src
+RUN uv pip install --system --no-cache-dir .
 
 # Expose the default port for SSE transport
 EXPOSE 8000
@@ -21,4 +23,4 @@ ENV UV_CACHE_DIR="/tmp/uv-cache"
 ENV UV_TOOL_DIR="/tmp/uv-tools"
 
 # Run the server with SSE transport
-CMD ["uvx", "mcp-server-qdrant", "--transport", "streamable-http"]
+CMD ["mcp-server-qdrant", "--transport", "streamable-http"]
