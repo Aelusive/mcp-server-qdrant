@@ -18,4 +18,4 @@ ENV COLLECTION_NAME="default-collection"
 ENV EMBEDDING_MODEL="sentence-transformers/all-MiniLM-L6-v2"
 
 # Run the server with SSE transport
-CMD uvx mcp-server-qdrant --transport sse
+CMD uvx mcp-server-qdrant --transport streamable-http
