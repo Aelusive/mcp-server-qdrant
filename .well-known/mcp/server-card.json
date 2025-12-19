@@ -1,0 +1,19 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/mcp-server-card/v1.json",
+  "version": "1.0",
+  "serverInfo": {
+    "name": "mcp-server-qdrant",
+    "version": "0.8.1"
+  },
+  "transport": {
+    "type": "streamable-http",
+    "endpoint": "/mcp/"
+  },
+  "authentication": {
+    "required": true,
+    "schemes": [
+      "oauth2",
+      "bearer"
+    ]
+  }
+}

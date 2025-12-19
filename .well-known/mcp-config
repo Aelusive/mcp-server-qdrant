@@ -1,0 +1,46 @@
+{
+  "title": "MCP Session Configuration",
+  "description": "Schema for the /mcp endpoint configuration",
+  "type": "object",
+  "x-query-style": "dot+bracket",
+  "properties": {
+    "QDRANT_URL": {
+      "type": "string",
+      "title": "Qdrant URL",
+      "description": "URL of the Qdrant server (use :memory: for ephemeral local mode)"
+    },
+    "QDRANT_API_KEY": {
+      "type": "string",
+      "title": "Qdrant API key",
+      "description": "API key for the Qdrant server"
+    },
+    "COLLECTION_NAME": {
+      "type": "string",
+      "title": "Collection name",
+      "description": "Default collection name to store/search in"
+    },
+    "QDRANT_LOCAL_PATH": {
+      "type": "string",
+      "title": "Local Qdrant path",
+      "description": "Path to local Qdrant storage (cannot be set with QDRANT_URL)"
+    },
+    "EMBEDDING_MODEL": {
+      "type": "string",
+      "title": "Embedding model",
+      "description": "FastEmbed model name (e.g. sentence-transformers/all-MiniLM-L6-v2)"
+    },
+    "FASTMCP_HOST": {
+      "type": "string",
+      "title": "Bind host",
+      "description": "Host address to bind the HTTP server to",
+      "default": "0.0.0.0"
+    },
+    "FASTMCP_PORT": {
+      "type": "string",
+      "title": "Bind port",
+      "description": "Port to bind the HTTP server to",
+      "default": "8000"
+    }
+  },
+  "required": []
+}
