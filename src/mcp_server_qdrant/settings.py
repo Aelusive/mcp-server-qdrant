@@ -107,6 +107,17 @@ class QdrantSettings(BaseSettings):
 
     @model_validator(mode="after")
     def check_local_path_conflict(self) -> "QdrantSettings":
+        # Treat empty-string env vars as "unset". Some platforms inject empty
+        # strings for missing secrets/config, which can break downstream clients.
+        if self.location == "":
+            self.location = None
+        if self.api_key == "":
+            self.api_key = None
+        if self.collection_name == "":
+            self.collection_name = None
+        if self.local_path == "":
+            self.local_path = None
+
         if self.local_path:
             if self.location is not None or self.api_key is not None:
                 raise ValueError(
