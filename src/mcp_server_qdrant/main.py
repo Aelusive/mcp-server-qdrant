@@ -1,4 +1,5 @@
 import argparse
+import os
 
 
 def main():
@@ -22,63 +23,33 @@ def main():
     from mcp_server_qdrant.server import mcp
 
     # For HTTP transports, build an explicit ASGI app and run it with Uvicorn.
-    # This makes it possible to expose discovery endpoints (/.well-known/...)
-    # at the root, which is required by platforms like Smithery during scan.
+    # Smithery requires CORS middleware and listening on PORT env variable.
     if args.transport in {"sse", "streamable-http"}:
-        import os
-
         import uvicorn
-        from starlette.responses import JSONResponse
-        from starlette.routing import Route
+        from starlette.middleware.cors import CORSMiddleware
 
-        # Build the FastMCP ASGI app for the requested transport.
-        # FastMCP's default endpoints are typically:
-        # - SSE:            /sse
-        # - Streamable HTTP: /mcp/
-        app = mcp.http_app(transport=args.transport)
+        # Build the FastMCP ASGI app for streamable HTTP transport.
+        # This exposes the /mcp endpoint that Smithery expects.
+        app = mcp.streamable_http_app()
 
-        def _server_card(_request):
-            # Keep this lightweight and stable. Smithery mainly needs to learn
-            # the transport endpoint path so it can POST to it.
-            endpoint = "/mcp/" if args.transport == "streamable-http" else "/sse"
-            return JSONResponse(
-                {
-                    "name": "mcp-server-qdrant",
-                    "description": "MCP server for retrieving context from a Qdrant vector database",
-                    "version": "0.8.1",
-                    "capabilities": {
-                        "tools": True,
-                    },
-                    "transport": {"type": args.transport, "endpoint": endpoint},
-                    "authentication": {"required": False},
-                }
-            )
-
-        def _mcp_config(_request):
-            # Minimal Smithery discovery document. Some scanners look for this
-            # file to determine whether config UI is needed.
-            return JSONResponse({"mcpServers": {}})
-
-        # Attach discovery endpoints at the root of the app.
-        # We add them explicitly instead of relying on decorators because some
-        # FastMCP runners mount sub-apps where /.well-known/* would not be visible.
-        # Smithery expects the server card at /.well-known/mcp.json
-        app.router.routes.insert(
-            0, Route("/.well-known/mcp.json", _server_card, methods=["GET"])
-        )
-        # Also keep the standard MCP path for compatibility
-        app.router.routes.insert(
-            0, Route("/.well-known/mcp/server-card.json", _server_card, methods=["GET"])
-        )
-        app.router.routes.insert(
-            0, Route("/.well-known/mcp-config", _mcp_config, methods=["GET"])
+        # IMPORTANT: Add CORS middleware for browser-based clients and Smithery
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=["*"],
+            allow_credentials=True,
+            allow_methods=["GET", "POST", "OPTIONS"],
+            allow_headers=["*"],
+            expose_headers=["mcp-session-id", "mcp-protocol-version"],
+            max_age=86400,
         )
 
-        host = os.getenv("FASTMCP_HOST", "127.0.0.1")
-        port_str = os.getenv("FASTMCP_PORT") or os.getenv("PORT") or "8000"
-        port = int(port_str)
+        # Use PORT environment variable (Smithery sets this to 8081)
+        host = os.getenv("FASTMCP_HOST", "0.0.0.0")
+        port = int(os.environ.get("PORT", 8000))
 
+        print(f"Starting MCP server on {host}:{port}")
         uvicorn.run(app, host=host, port=port)
         return
 
+    # Default: STDIO transport for local development
     mcp.run(transport=args.transport)

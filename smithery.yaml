@@ -4,8 +4,7 @@ build:
   dockerBuildPath: "."
 startCommand:
   type: "http"
-  endpoint: "/mcp/"
-  port: 8000
+  # Note: Smithery controls the PORT (8081) - don't specify it here
 
 # Per-session configuration schema (used by Smithery Inspector/UI).
 configSchema:
