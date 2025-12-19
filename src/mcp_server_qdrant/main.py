@@ -27,6 +27,8 @@ def main():
     if args.transport in {"sse", "streamable-http"}:
         import uvicorn
         from starlette.middleware.cors import CORSMiddleware
+        from starlette.responses import JSONResponse
+        from starlette.routing import Route
 
         # Build the FastMCP ASGI app for streamable HTTP transport.
         # This exposes the /mcp endpoint that Smithery expects.
@@ -41,6 +43,25 @@ def main():
             allow_headers=["*"],
             expose_headers=["mcp-session-id", "mcp-protocol-version"],
             max_age=86400,
+        )
+
+        # MCP Server Card endpoint - required by Smithery for server discovery
+        def _server_card(_request):
+            return JSONResponse({
+                "name": "mcp-server-qdrant",
+                "version": "0.8.1",
+                "description": "MCP server for retrieving context from a Qdrant vector database",
+                "vendor": {
+                    "name": "Qdrant"
+                },
+                "capabilities": {
+                    "tools": {}
+                }
+            })
+
+        # Add server card at /.well-known/mcp.json
+        app.router.routes.insert(
+            0, Route("/.well-known/mcp.json", _server_card, methods=["GET"])
         )
 
         # Use PORT environment variable (Smithery sets this to 8081)
