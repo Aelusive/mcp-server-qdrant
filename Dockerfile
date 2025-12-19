@@ -1,17 +1,21 @@
-FROM node:18-alpine
+FROM python:3.11-slim
 
 WORKDIR /app
 
-# # Copy package files
-# COPY package*.json ./
+# Install uv for package management
+RUN pip install --no-cache-dir uv
 
-# # Install dependencies
-# RUN npm install
+# Install the mcp-server-qdrant package
+RUN uv pip install --system --no-cache-dir mcp-server-qdrant
 
-# # Copy application code
-# COPY . .
+# Expose the default port for SSE transport
+EXPOSE 8000
 
-# # Build the application
-# RUN npm run build
+# Set environment variables with defaults that can be overridden at runtime
+ENV QDRANT_URL=""
+ENV QDRANT_API_KEY=""
+ENV COLLECTION_NAME="default-collection"
+ENV EMBEDDING_MODEL="sentence-transformers/all-MiniLM-L6-v2"
 
-CMD ["node", "dist/index.js"]
+# Run the server with SSE transport
+CMD uvx mcp-server-qdrant --transport streamable-http
