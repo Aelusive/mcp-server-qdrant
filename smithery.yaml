@@ -3,8 +3,8 @@ build:
   dockerfile: "Dockerfile"
   dockerBuildPath: "."
 startCommand:
-  # Streamable HTTP transport (recommended for remote MCP clients)
-  type: "streamable_http"
+  type: "http"
+  endpoint: "/mcp"
   port: 8000
 
 # Per-session configuration schema (used by Smithery Inspector/UI).
@@ -14,7 +14,7 @@ configSchema:
     QDRANT_URL:
       type: string
       title: Qdrant URL
-      description: URL of the Qdrant server (use :memory: for ephemeral local mode)
+      description: "URL of the Qdrant server (use :memory: for ephemeral local mode)"
     QDRANT_API_KEY:
       type: string
       title: Qdrant API key
