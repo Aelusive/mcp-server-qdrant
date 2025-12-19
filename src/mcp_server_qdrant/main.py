@@ -26,27 +26,14 @@ def main():
     # Smithery requires CORS middleware and listening on PORT env variable.
     if args.transport in {"sse", "streamable-http"}:
         import uvicorn
+        from starlette.applications import Starlette
+        from starlette.middleware import Middleware
         from starlette.middleware.cors import CORSMiddleware
         from starlette.responses import JSONResponse
-        from starlette.routing import Route
-
-        # Build the FastMCP ASGI app for streamable HTTP transport.
-        # This exposes the /mcp endpoint that Smithery expects.
-        app = mcp.streamable_http_app()
-
-        # IMPORTANT: Add CORS middleware for browser-based clients and Smithery
-        app.add_middleware(
-            CORSMiddleware,
-            allow_origins=["*"],
-            allow_credentials=True,
-            allow_methods=["GET", "POST", "OPTIONS"],
-            allow_headers=["*"],
-            expose_headers=["mcp-session-id", "mcp-protocol-version"],
-            max_age=86400,
-        )
+        from starlette.routing import Mount, Route
 
         # MCP Server Card endpoint - required by Smithery for server discovery
-        def _server_card(_request):
+        async def server_card(request):
             return JSONResponse({
                 "name": "mcp-server-qdrant",
                 "version": "0.8.1",
@@ -59,9 +46,28 @@ def main():
                 }
             })
 
-        # Add server card at /.well-known/mcp.json
-        app.router.routes.insert(
-            0, Route("/.well-known/mcp.json", _server_card, methods=["GET"])
+        # Get the FastMCP ASGI app for the /mcp endpoint
+        mcp_app = mcp.http_app()
+
+        # Create a wrapper Starlette app with discovery endpoints and the MCP app
+        app = Starlette(
+            routes=[
+                # Discovery endpoint for Smithery
+                Route("/.well-known/mcp.json", server_card, methods=["GET"]),
+                # Mount the FastMCP app at /mcp
+                Mount("/mcp", app=mcp_app.routes[0].app),
+            ],
+            middleware=[
+                Middleware(
+                    CORSMiddleware,
+                    allow_origins=["*"],
+                    allow_credentials=True,
+                    allow_methods=["GET", "POST", "OPTIONS"],
+                    allow_headers=["*"],
+                    expose_headers=["mcp-session-id", "mcp-protocol-version"],
+                    max_age=86400,
+                ),
+            ],
         )
 
         # Use PORT environment variable (Smithery sets this to 8081)
