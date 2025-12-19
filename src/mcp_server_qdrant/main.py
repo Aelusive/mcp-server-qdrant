@@ -21,4 +21,56 @@ def main():
     # only after we make the changes.
     from mcp_server_qdrant.server import mcp
 
+    # For HTTP transports, build an explicit ASGI app and run it with Uvicorn.
+    # This makes it possible to expose discovery endpoints (/.well-known/...)
+    # at the root, which is required by platforms like Smithery during scan.
+    if args.transport in {"sse", "streamable-http"}:
+        import os
+
+        import uvicorn
+        from starlette.responses import JSONResponse
+        from starlette.routing import Route
+
+        # Build the FastMCP ASGI app for the requested transport.
+        # FastMCP's default endpoints are typically:
+        # - SSE:            /sse
+        # - Streamable HTTP: /mcp/
+        app = mcp.http_app(transport=args.transport)
+
+        def _server_card(_request):
+            # Keep this lightweight and stable. Smithery mainly needs to learn
+            # the transport endpoint path so it can POST to it.
+            endpoint = "/mcp/" if args.transport == "streamable-http" else "/sse"
+            return JSONResponse(
+                {
+                    "$schema": "https://static.modelcontextprotocol.io/schemas/mcp-server-card/v1.json",
+                    "version": "1.0",
+                    "serverInfo": {"name": "mcp-server-qdrant", "version": "0.8.1"},
+                    "transport": {"type": args.transport, "endpoint": endpoint},
+                    "authentication": {"required": False, "schemes": []},
+                }
+            )
+
+        def _mcp_config(_request):
+            # Minimal Smithery discovery document. Some scanners look for this
+            # file to determine whether config UI is needed.
+            return JSONResponse({"mcpServers": {}})
+
+        # Attach discovery endpoints at the root of the app.
+        # We add them explicitly instead of relying on decorators because some
+        # FastMCP runners mount sub-apps where /.well-known/* would not be visible.
+        app.router.routes.insert(
+            0, Route("/.well-known/mcp/server-card.json", _server_card, methods=["GET"])
+        )
+        app.router.routes.insert(
+            0, Route("/.well-known/mcp-config", _mcp_config, methods=["GET"])
+        )
+
+        host = os.getenv("FASTMCP_HOST", "127.0.0.1")
+        port_str = os.getenv("FASTMCP_PORT") or os.getenv("PORT") or "8000"
+        port = int(port_str)
+
+        uvicorn.run(app, host=host, port=port)
+        return
+
     mcp.run(transport=args.transport)
