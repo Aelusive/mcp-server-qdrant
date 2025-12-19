@@ -50,6 +50,7 @@ def main():
         mcp_app = mcp.http_app()
 
         # Create a wrapper Starlette app with discovery endpoints and the MCP app
+        # IMPORTANT: Pass the lifespan from FastMCP to initialize the task group
         app = Starlette(
             routes=[
                 # Discovery endpoint for Smithery
@@ -68,6 +69,7 @@ def main():
                     max_age=86400,
                 ),
             ],
+            lifespan=mcp_app.lifespan,
         )
 
         # Use PORT environment variable (Smithery sets this to 8081)
