@@ -26,7 +26,10 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+# Install uv for package management
 RUN pip install --no-cache-dir uv
-# RUN pip install -r requirements.txt
+
+# Install the mcp-server-qdrant package
+RUN uv pip install --system --no-cache-dir mcp-server-qdrant
 
 CMD ["python", "server.py"]
