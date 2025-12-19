@@ -41,4 +41,5 @@ ENV QDRANT_API_KEY=""
 ENV COLLECTION_NAME="default-collection"
 ENV EMBEDDING_MODEL="sentence-transformers/all-MiniLM-L6-v2"
 
-CMD ["python", "server.py"]
+# Run the server with SSE transport
+CMD uvx mcp-server-qdrant --transport streamable-http
