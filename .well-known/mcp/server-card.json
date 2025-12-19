@@ -1,19 +1,48 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/mcp-server-card/v1.json",
   "version": "1.0",
+  "protocolVersion": "2025-06-18",
   "serverInfo": {
     "name": "mcp-server-qdrant",
+    "title": "Qdrant MCP Server",
     "version": "0.8.1"
   },
+  "description": "MCP server for storing and retrieving memories in Qdrant.",
+  "documentationUrl": "https://github.com/pabloyus/pseudoface_v3/tree/dev/mcp-server-qdrant",
   "transport": {
     "type": "streamable-http",
-    "endpoint": "/mcp/"
+    "endpoint": "/mcp"
+  },
+  "capabilities": {
+    "tools": {
+      "listChanged": true
+    },
+    "prompts": {
+      "listChanged": true
+    },
+    "resources": {
+      "subscribe": false,
+      "listChanged": true
+    }
+  },
+  "requires": {
+    "sampling": {},
+    "roots": {}
   },
   "authentication": {
     "required": true,
     "schemes": [
-      "oauth2",
-      "bearer"
+      "bearer",
+      "oauth2"
     ]
-  }
+  },
+  "tools": [
+    "dynamic"
+  ],
+  "resources": [
+    "dynamic"
+  ],
+  "prompts": [
+    "dynamic"
+  ]
 }
