@@ -4,7 +4,7 @@ build:
   dockerBuildPath: "."
 startCommand:
   type: "http"
-  endpoint: "/mcp"
+  endpoint: "/mcp/"
   port: 8000
 
 # Per-session configuration schema (used by Smithery Inspector/UI).

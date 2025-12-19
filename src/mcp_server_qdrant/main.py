@@ -43,11 +43,14 @@ def main():
             endpoint = "/mcp/" if args.transport == "streamable-http" else "/sse"
             return JSONResponse(
                 {
-                    "$schema": "https://static.modelcontextprotocol.io/schemas/mcp-server-card/v1.json",
-                    "version": "1.0",
-                    "serverInfo": {"name": "mcp-server-qdrant", "version": "0.8.1"},
+                    "name": "mcp-server-qdrant",
+                    "description": "MCP server for retrieving context from a Qdrant vector database",
+                    "version": "0.8.1",
+                    "capabilities": {
+                        "tools": True,
+                    },
                     "transport": {"type": args.transport, "endpoint": endpoint},
-                    "authentication": {"required": False, "schemes": []},
+                    "authentication": {"required": False},
                 }
             )
 
@@ -59,6 +62,11 @@ def main():
         # Attach discovery endpoints at the root of the app.
         # We add them explicitly instead of relying on decorators because some
         # FastMCP runners mount sub-apps where /.well-known/* would not be visible.
+        # Smithery expects the server card at /.well-known/mcp.json
+        app.router.routes.insert(
+            0, Route("/.well-known/mcp.json", _server_card, methods=["GET"])
+        )
+        # Also keep the standard MCP path for compatibility
         app.router.routes.insert(
             0, Route("/.well-known/mcp/server-card.json", _server_card, methods=["GET"])
         )
